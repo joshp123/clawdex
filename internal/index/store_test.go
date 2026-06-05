@@ -302,6 +302,35 @@ func TestCrawlerImportDoesNotMatchByNameOnly(t *testing.T) {
 	}
 }
 
+func TestCrawlerImportCreateDedupeNormalizedPhoneValues(t *testing.T) {
+	r := testRepo(t)
+	s := New(r)
+	now := time.Now()
+	changes, err := s.ImportCrawlerContacts("telecrawl", []model.SourceContact{{
+		Name: "Duplicate Phone",
+		Phones: []model.ContactValue{
+			{Value: "+1 555 0100"},
+			{Value: "15550100"},
+		},
+	}}, false, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(changes) != 1 || changes[0].Action != "create" {
+		t.Fatalf("changes = %#v", changes)
+	}
+	p, err := s.FindPerson("+1 555 0100")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.Phones) != 1 {
+		t.Fatalf("phones = %#v", p.Phones)
+	}
+	if got := p.Sources["telecrawl"]; len(got.Phones) != 1 || got.Phones[0] != "+1 555 0100" {
+		t.Fatalf("telecrawl source = %#v", got)
+	}
+}
+
 func TestCrawlerImportDryRunMatchesRealDuplicateCollapse(t *testing.T) {
 	r := testRepo(t)
 	s := New(r)

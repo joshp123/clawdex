@@ -41,8 +41,8 @@ func (s Store) importContacts(source string, contacts []model.SourceContact, opt
 		if idx < 0 {
 			p := markdown.NewPerson(contact.Name, now)
 			p.Tags = cleanList(contact.Tags)
-			p.Emails = sourceValues(contact.Emails, source)
-			p.Phones = sourceValues(contact.Phones, source)
+			p.Emails = sourceValues(contact.Emails, source, model.NormalizeEmail)
+			p.Phones = sourceValues(contact.Phones, source, model.NormalizePhone)
 			p.Accounts = cleanAccounts(contact.Accounts)
 			if opts.TrackSources {
 				p.Sources = mergePersonSources(p.Sources, source, contact)
@@ -185,17 +185,23 @@ func matchContact(people []model.Person, contact model.SourceContact, matchNames
 	return -1
 }
 
-func sourceValues(values []model.ContactValue, source string) []model.ContactValue {
+func sourceValues(values []model.ContactValue, source string, normalize func(string) string) []model.ContactValue {
 	out := make([]model.ContactValue, 0, len(values))
-	for i, value := range values {
+	seen := map[string]bool{}
+	for _, value := range values {
+		key := normalize(value.Value)
+		if key == "" || seen[key] {
+			continue
+		}
 		value.Source = source
 		if value.Label == "" {
 			value.Label = "other"
 		}
-		if i == 0 {
+		if len(out) == 0 {
 			value.Primary = true
 		}
 		out = append(out, value)
+		seen[key] = true
 	}
 	return out
 }
