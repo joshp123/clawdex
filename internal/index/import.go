@@ -85,12 +85,16 @@ func (s Store) importContacts(source string, contacts []model.SourceContact, opt
 		beforeApple := p.Apple
 		beforeGoogle := p.Google
 		beforeAvatar := p.Avatar
+		matchedContact := contact
+		if opts.TrackSources {
+			matchedContact = contactForPerson(people, idx, contact)
+		}
 		p.Tags = appendMissingStrings(p.Tags, contact.Tags)
-		p.Emails = appendMissingValues(p.Emails, contact.Emails, source, model.NormalizeEmail)
-		p.Phones = appendMissingValues(p.Phones, contact.Phones, source, model.NormalizePhone)
+		p.Emails = appendMissingValues(p.Emails, matchedContact.Emails, source, model.NormalizeEmail)
+		p.Phones = appendMissingValues(p.Phones, matchedContact.Phones, source, model.NormalizePhone)
 		p.Accounts = mergeAccounts(p.Accounts, contact.Accounts)
 		if opts.TrackSources {
-			p.Sources = mergePersonSources(p.Sources, source, contact)
+			p.Sources = mergePersonSources(p.Sources, source, matchedContact)
 		}
 		setExternal(&p, source, contact, now)
 		avatarChanged := avatarWouldChange(beforeAvatar, contact.Avatar, source)
@@ -108,7 +112,7 @@ func (s Store) importContacts(source string, contacts []model.SourceContact, opt
 		if len(p.Emails) == beforeEmails && len(p.Phones) == beforePhones && !tagsChanged && !accountsChanged && !sourcesChanged && !externalChanged && !avatarChanged {
 			continue
 		}
-		change := model.ImportChange{Action: "update", PersonID: p.ID, Name: p.Name, Source: contact, Path: p.Path}
+		change := model.ImportChange{Action: "update", PersonID: p.ID, Name: p.Name, Source: matchedContact, Path: p.Path}
 		if !opts.DryRun {
 			p.UpdatedAt = now.UTC()
 			if err := markdown.WritePerson(p.Path, p); err != nil {
@@ -122,6 +126,33 @@ func (s Store) importContacts(source string, contacts []model.SourceContact, opt
 		return changes, s.Rebuild()
 	}
 	return changes, nil
+}
+
+func contactForPerson(people []model.Person, idx int, contact model.SourceContact) model.SourceContact {
+	contact.Emails = contactValuesForPerson(people, idx, contact.Emails, model.NormalizeEmail, personHasEmail)
+	contact.Phones = contactValuesForPerson(people, idx, contact.Phones, model.NormalizePhone, personHasPhone)
+	return contact
+}
+
+func contactValuesForPerson(people []model.Person, idx int, values []model.ContactValue, normalize func(string) string, has func(model.Person, string) bool) []model.ContactValue {
+	out := make([]model.ContactValue, 0, len(values))
+	for _, value := range values {
+		key := normalize(value.Value)
+		if key == "" || valueOwnedByOtherPerson(people, idx, key, has) {
+			continue
+		}
+		out = append(out, value)
+	}
+	return out
+}
+
+func valueOwnedByOtherPerson(people []model.Person, idx int, key string, has func(model.Person, string) bool) bool {
+	for i, person := range people {
+		if i != idx && has(person, key) {
+			return true
+		}
+	}
+	return false
 }
 
 func avatarWouldChange(current model.AvatarRef, incoming *model.SourceAvatar, source string) bool {

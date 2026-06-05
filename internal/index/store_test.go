@@ -331,6 +331,53 @@ func TestCrawlerImportCreateDedupeNormalizedPhoneValues(t *testing.T) {
 	}
 }
 
+func TestCrawlerImportSkipsPhoneOwnedByAnotherPerson(t *testing.T) {
+	r := testRepo(t)
+	s := New(r)
+	now := time.Now()
+	ada, err := s.AddPerson("Ada Existing", nil, []string{"+1 555 0100"}, nil, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bob, err := s.AddPerson("Bob Existing", nil, []string{"+1 555 0101"}, nil, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	changes, err := s.ImportCrawlerContacts("telecrawl", []model.SourceContact{{
+		Name: "Ada Telegram",
+		Phones: []model.ContactValue{
+			{Value: "+1 555 0100"},
+			{Value: "+1 555 0101"},
+		},
+	}}, false, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(changes) != 1 || changes[0].Action != "update" {
+		t.Fatalf("changes = %#v", changes)
+	}
+	if len(changes[0].Source.Phones) != 1 || changes[0].Source.Phones[0].Value != "+1 555 0100" {
+		t.Fatalf("change source phones = %#v", changes[0].Source.Phones)
+	}
+	gotAda, err := s.FindPerson("+1 555 0100")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotAda.ID != ada.ID || len(gotAda.Phones) != 1 {
+		t.Fatalf("ada = %#v", gotAda)
+	}
+	if got := gotAda.Sources["telecrawl"]; len(got.Phones) != 1 || got.Phones[0] != "+1 555 0100" {
+		t.Fatalf("telecrawl source = %#v", got)
+	}
+	gotBob, err := s.FindPerson("+1 555 0101")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotBob.ID != bob.ID || len(gotBob.Phones) != 1 {
+		t.Fatalf("bob = %#v", gotBob)
+	}
+}
+
 func TestCrawlerImportDryRunMatchesRealDuplicateCollapse(t *testing.T) {
 	r := testRepo(t)
 	s := New(r)
