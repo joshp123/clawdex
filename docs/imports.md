@@ -127,6 +127,28 @@ contacts:
 Source crawlers own source-native extraction and privacy filtering. Clawdex
 owns canonical people, markdown storage, matching, and human edits.
 
+Crawler contact imports match existing people by source accounts, external IDs,
+emails, or normalized phone numbers. They do not automatically merge by name
+alone; a matching display name without a matching phone is treated as a new
+person for now instead of risking a bad join.
+
+When a crawler contact matches an existing person, clawdex records that source
+under the person's local markdown frontmatter:
+
+```yaml
+sources:
+  telecrawl:
+    names: ["Ada Example"]
+    phones: ["15550100"]
+  wacrawl:
+    names: ["Ada Example"]
+    phones: ["+1 555 0100"]
+```
+
+That source evidence is local-only and stable across repeated imports. It lets
+clawdex answer that a person was seen in Telegram or WhatsApp even when the
+incoming phone number was already present and no canonical phone field changed.
+
 ## Sync (preview-only)
 
 ```bash

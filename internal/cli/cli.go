@@ -433,7 +433,7 @@ func (c *ImportContactsCmd) Run(r *Runtime) error {
 	if err != nil {
 		return err
 	}
-	changes, err := r.store.ImportContacts(source, contacts, r.root.DryRun, time.Now())
+	changes, err := r.store.ImportCrawlerContacts(source, contacts, r.root.DryRun, time.Now())
 	if err != nil {
 		return err
 	}

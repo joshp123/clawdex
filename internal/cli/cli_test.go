@@ -321,6 +321,32 @@ func TestExecuteImportContactsFromCrawlerPath(t *testing.T) {
 	}
 }
 
+func TestExecuteImportContactsNoopJSONIsEmptyArray(t *testing.T) {
+	cfg, data := testPaths(t)
+	var out, errOut bytes.Buffer
+	if err := Execute([]string{"--config", cfg, "init", data, "--remote", ""}, &out, &errOut); err != nil {
+		t.Fatal(err)
+	}
+	fake := writeFakeContactCrawler(t, "telecrawl", `{"contacts":[{"display_name":"Ada Source","phone_numbers":["+1 555 0100"]}]}`)
+	out.Reset()
+	errOut.Reset()
+	if err := Execute([]string{"--config", cfg, "import", "contacts", "--from", fake}, &out, &errOut); err != nil {
+		t.Fatalf("first import contacts: %v stderr=%s stdout=%s", err, errOut.String(), out.String())
+	}
+	out.Reset()
+	errOut.Reset()
+	if err := Execute([]string{"--config", cfg, "--json", "import", "contacts", "--from", fake}, &out, &errOut); err != nil {
+		t.Fatalf("second import contacts: %v stderr=%s stdout=%s", err, errOut.String(), out.String())
+	}
+	var changes []model.ImportChange
+	if err := json.Unmarshal(out.Bytes(), &changes); err != nil {
+		t.Fatalf("noop import output is not an array: %s", out.String())
+	}
+	if len(changes) != 0 {
+		t.Fatalf("noop import changes = %#v", changes)
+	}
+}
+
 func TestExecuteImportContactsDoesNotShellExpandManifestArgv(t *testing.T) {
 	cfg, data := testPaths(t)
 	var out, errOut bytes.Buffer
