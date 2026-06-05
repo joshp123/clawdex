@@ -1,3 +1,7 @@
+---
+written_by: ai
+---
+
 # Imports
 
 Imports project an external contact graph into the same markdown shape
@@ -100,6 +104,28 @@ clawdex import discrawl --db ~/.discrawl/discrawl.db
 Same shape as birdclaw, but reads from
 [discrawl](https://github.com/steipete/discrawl)'s SQLite cache. Discord
 handles land under `accounts.discord`.
+
+## Crawler Contacts
+
+```bash
+clawdex import contacts --from telecrawl --dry-run
+clawdex import contacts --from wacrawl --dry-run
+clawdex import contacts --from /path/to/crawler --dry-run
+```
+
+Reads a local crawler's crawlkit metadata and runs its advertised
+`contact-export` command. This is the v0 machine contract for source crawler
+contacts:
+
+- metadata schema is `crawlkit.control.v1`
+- command name is `contact-export`
+- command is read-only and advertises `json: true`
+- advertised `argv` includes `--json` plus any source-safe flags
+- payload root is `contacts`
+- each contact has only `display_name` and `phone_numbers`
+
+Source crawlers own source-native extraction and privacy filtering. Clawdex
+owns canonical people, markdown storage, matching, and human edits.
 
 ## Sync (preview-only)
 

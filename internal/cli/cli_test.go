@@ -384,6 +384,10 @@ func TestExecuteImportContactsRejectsBadManifests(t *testing.T) {
 			manifest: `{"schema_version":"crawlkit.control.v1","id":"telecrawl","display_name":"Telegram Crawl","binary":{"name":"telecrawl"},"commands":{"contact-export":{"argv":["telecrawl","contacts","export"]}},"privacy":{"contains_private_messages":true,"exports_secrets":false}}`,
 		},
 		{
+			name:     "json command missing json flag",
+			manifest: `{"schema_version":"crawlkit.control.v1","id":"telecrawl","display_name":"Telegram Crawl","binary":{"name":"telecrawl"},"commands":{"contact-export":{"argv":["telecrawl","contacts","export"],"json":true}},"privacy":{"contains_private_messages":true,"exports_secrets":false}}`,
+		},
+		{
 			name:     "empty argv",
 			manifest: `{"schema_version":"crawlkit.control.v1","id":"telecrawl","display_name":"Telegram Crawl","binary":{"name":"telecrawl"},"commands":{"contact-export":{"argv":[],"json":true}},"privacy":{"contains_private_messages":true,"exports_secrets":false}}`,
 		},
@@ -484,6 +488,9 @@ func TestContactExportArgv(t *testing.T) {
 	}
 	if _, err := contactExportArgv("telecrawl", []string{"othercrawl"}); err == nil {
 		t.Fatal("expected mismatched argv error")
+	}
+	if _, err := contactExportArgv("telecrawl", []string{"telecrawl", "contacts", "export"}); err == nil {
+		t.Fatal("expected missing json flag error")
 	}
 }
 

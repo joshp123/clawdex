@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -491,6 +492,9 @@ func contactExportArgv(binary string, advertised []string) ([]string, error) {
 	advertisedName := filepath.Base(advertised[0])
 	if requestedName != "" && advertisedName != "" && requestedName != advertisedName {
 		return nil, fmt.Errorf("%s contact-export argv starts with %q, want %q", binary, advertised[0], requestedName)
+	}
+	if !slices.Contains(advertised, "--json") {
+		return nil, fmt.Errorf("%s contact-export argv must include --json", binary)
 	}
 	argv := append([]string(nil), advertised...)
 	argv[0] = binary
