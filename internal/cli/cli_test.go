@@ -372,6 +372,10 @@ func TestExecuteImportContactsRejectsBadManifests(t *testing.T) {
 		manifest string
 	}{
 		{
+			name:     "wrong schema",
+			manifest: `{"schema_version":"not-crawlkit","id":"telecrawl","display_name":"Telegram Crawl","binary":{"name":"telecrawl"},"commands":{"contact-export":{"argv":["telecrawl","--json","contacts","export"],"json":true}},"privacy":{"contains_private_messages":true,"exports_secrets":false}}`,
+		},
+		{
 			name:     "missing command",
 			manifest: `{"schema_version":"crawlkit.control.v1","id":"telecrawl","display_name":"Telegram Crawl","binary":{"name":"telecrawl"},"commands":{},"privacy":{"contains_private_messages":true,"exports_secrets":false}}`,
 		},

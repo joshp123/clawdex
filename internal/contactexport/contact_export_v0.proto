@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package openclaw.clawdex.contactexport.v1;
+package openclaw.clawdex.contactexport.v0;
 
 message ContactExport {
   repeated Contact contacts = 1;

@@ -513,6 +513,9 @@ func readCrawlerManifest(ctx context.Context, binary string) (control.Manifest, 
 	if err := json.Unmarshal(data, &manifest); err != nil {
 		return control.Manifest{}, fmt.Errorf("%s metadata decode failed: %w", binary, err)
 	}
+	if strings.TrimSpace(manifest.SchemaVersion) != control.SchemaVersion {
+		return control.Manifest{}, fmt.Errorf("%s metadata schema_version = %q, want %q", binary, manifest.SchemaVersion, control.SchemaVersion)
+	}
 	return manifest, nil
 }
 

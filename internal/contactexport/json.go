@@ -37,27 +37,18 @@ func Decode(r io.Reader) (ContactExport, error) {
 	return out, nil
 }
 
-func Encode(w io.Writer, export ContactExport) error {
-	if err := export.Normalize(); err != nil {
-		return err
-	}
-	enc := json.NewEncoder(w)
-	enc.SetIndent("", "  ")
-	return enc.Encode(export)
-}
-
 func (e *ContactExport) Normalize() error {
 	if e == nil {
 		return errors.New("contact export is nil")
+	}
+	if e.Contacts == nil {
+		return errors.New("contact export missing contacts")
 	}
 	contacts := e.Contacts[:0]
 	for i := range e.Contacts {
 		c := e.Contacts[i]
 		name := strings.TrimSpace(c.DisplayName)
 		phones := cleanPhones(c.PhoneNumbers)
-		if name == "" && len(phones) == 0 {
-			continue
-		}
 		if name == "" {
 			return fmt.Errorf("contact %d missing display_name", i)
 		}
